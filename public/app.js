@@ -18,6 +18,16 @@ const pokerTable = document.getElementById('poker-table');
 
 let currentRoomId = null;
 
+// Escapa texto antes de insertarlo con innerHTML (evita XSS con nombres de usuario)
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // RENDERIZAR LOGIN DEPENDIENDO SI HAY URL DE INVITACIÓN
 if (inviteRoomId) {
     // Vista Invitado
@@ -141,7 +151,7 @@ socket.on('update_users', (state) => {
         
         if (state.revealed) {
             if (user.vote !== null) {
-                cardHtml = `<div class="table-card revealed">${user.vote}</div>`;
+                cardHtml = `<div class="table-card revealed">${escapeHtml(user.vote)}</div>`;
                 const v = parseFloat(user.vote);
                 totalSum += v; validVotesCount++;
                 voteCounts[v] = (voteCounts[v] || 0) + 1;
@@ -152,7 +162,8 @@ socket.on('update_users', (state) => {
             if (user.hasVoted) cardHtml = `<div class="table-card hidden"></div>`; 
         }
 
-        seat.innerHTML = `<span class="fw-bold text-truncate w-100" title="${user.username}">${user.username}</span>${cardHtml}`;
+        const safeName = escapeHtml(user.username);
+        seat.innerHTML = `<span class="fw-bold text-truncate w-100" title="${safeName}">${safeName}</span>${cardHtml}`;
         pokerTable.appendChild(seat);
     });
 
@@ -172,7 +183,7 @@ socket.on('update_users', (state) => {
                 summaryTotals.innerHTML += `
                     <div class="summary-card-group">
                         <span class="summary-card-count">${count} ${count === 1 ? 'voto' : 'votos'}</span>
-                        <div class="table-card revealed mt-0">${val}</div>
+                        <div class="table-card revealed mt-0">${escapeHtml(val)}</div>
                     </div>`;
             });
         } else {
@@ -182,12 +193,13 @@ socket.on('update_users', (state) => {
 
         state.users.forEach(user => {
             const voteHtml = user.vote !== null
-                ? `<div class="table-card revealed mt-0">${user.vote}</div>`
+                ? `<div class="table-card revealed mt-0">${escapeHtml(user.vote)}</div>`
                 : '<div class="table-card bg-light text-danger mt-0">X</div>';
+            const safeName = escapeHtml(user.username);
 
             summaryCards.innerHTML += `
                 <div class="summary-vote-group">
-                    <span class="summary-vote-name text-truncate" title="${user.username}">${user.username}</span>
+                    <span class="summary-vote-name text-truncate" title="${safeName}">${safeName}</span>
                     ${voteHtml}
                 </div>`;
         });

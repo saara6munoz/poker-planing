@@ -48,10 +48,19 @@ npm install
 
 ## Ejecucion
 
-Inicia el servidor con:
+El servidor necesita la variable de entorno `SCRUM_PASSWORD` con la contrasena de administrador. Si no esta definida, el servidor no inicia.
+
+En PowerShell:
+
+```powershell
+$env:SCRUM_PASSWORD = "tu-clave-secreta"
+npm start
+```
+
+En Bash:
 
 ```bash
-node server.js
+SCRUM_PASSWORD="tu-clave-secreta" npm start
 ```
 
 Luego abre la aplicacion en el navegador:
@@ -74,11 +83,7 @@ Debe ingresar:
 - El nombre de la sala.
 - La contrasena de administrador.
 
-La contrasena configurada actualmente es:
-
-```text
-scrum123
-```
+La contrasena es la definida en la variable de entorno `SCRUM_PASSWORD` del servidor. Pidesela a quien administra el despliegue.
 
 Si la contrasena es correcta, se crea una sala nueva con un identificador unico.
 
@@ -165,8 +170,19 @@ Socket.IO se encarga de enviar eventos en tiempo real:
 ## Consideraciones importantes
 
 - Las salas viven solo en memoria. Si el servidor se reinicia, las salas se pierden.
-- La contrasena del Scrum Master esta definida directamente en `server.js`.
-- La contrasena se compara usando SHA-256.
+- La contrasena del Scrum Master se lee de la variable de entorno `SCRUM_PASSWORD`. Nunca la subas al repositorio.
+- Cada conexion tiene un maximo de 5 intentos fallidos de contrasena.
+- El servidor admite hasta 50 salas activas a la vez.
+- Los nombres de usuario y de sala tienen un maximo de 40 caracteres, y solo se aceptan votos `1`, `2`, `3`, `5` y `8`.
+
+## Despliegue en Azure App Service
+
+1. Crea un App Service con runtime **Node 20 LTS** (o superior) en Linux.
+2. En **Configuracion > Configuracion general**, activa **Web sockets** (`On`). Sin esto el tiempo real no funciona bien.
+3. En la misma pantalla, deja **ARR affinity** activado y usa **una sola instancia**: las salas viven en memoria y no se comparten entre instancias.
+4. En **Variables de entorno** (App settings), agrega `SCRUM_PASSWORD` con la clave del Scrum Master. No definas `PORT`: Azure lo asigna solo.
+5. Despliega el codigo (desde VS Code con la extension de Azure App Service, `az webapp up` o GitHub Actions). Azure ejecuta `npm install` y `npm start`.
+6. Usa la URL `https://<nombre-app>.azurewebsites.net`. El boton **Copiar enlace** necesita HTTPS para funcionar.
 - No hay base de datos ni persistencia historica de resultados.
 - Si el Scrum Master se desconecta, el sistema asigna automaticamente ese rol a otro usuario conectado.
 
@@ -190,10 +206,10 @@ Instalar dependencias:
 npm install
 ```
 
-Ejecutar la aplicacion:
+Ejecutar la aplicacion (con `SCRUM_PASSWORD` definida):
 
 ```bash
-node server.js
+npm start
 ```
 
 Abrir en navegador:
